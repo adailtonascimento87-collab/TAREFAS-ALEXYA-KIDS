@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tarefas do Negócio — Alexya Kids</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1EC; --surface:#FFFFFF; --ink:#1C2B24; --muted:#67766D; --line:#D3DAD2;
+  --accent:#E8703A; --accent-ink:#FFFFFF;
+  --pend:#9AA89F; --doing:#3B6FB6; --done:#2F7D5B; --late:#C23B3B;
+  --radius:12px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121A16; --surface:#1B2620; --ink:#E6EDE8; --muted:#8FA096; --line:#2C3A32;
+    --accent:#F08A56; --accent-ink:#121A16;
+    --pend:#6E7D74; --doing:#7BA7E6; --done:#5CC59A; --late:#F07A7A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121A16; --surface:#1B2620; --ink:#E6EDE8; --muted:#8FA096; --line:#2C3A32;
+  --accent:#F08A56; --accent-ink:#121A16;
+  --pend:#6E7D74; --doing:#7BA7E6; --done:#5CC59A; --late:#F07A7A;
+}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);
+  font:400 16px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:3px solid var(--accent);outline-offset:2px}
+
+.wrap{max-width:1100px;margin:0 auto;padding:28px 16px 56px}
+header.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:22px}
+h1{margin:0;font-size:clamp(28px,5vw,40px);font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.sub{margin:6px 0 0;color:var(--muted)}
+.prog{display:flex;align-items:center;gap:10px;min-width:220px;flex:0 1 280px}
+.bar{flex:1;height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar span{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .3s ease}
+@media (prefers-reduced-motion:reduce){.bar span{transition:none}}
+#pct{font-weight:600;min-width:3.5ch;text-align:right}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin-bottom:16px}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{border:0;background:transparent;color:var(--muted);padding:7px 12px;border-radius:7px;font:inherit;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.add{display:grid;gap:10px;margin-bottom:26px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+#title{font-size:17px;font-weight:600}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:center}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer}
+.primary:hover{filter:brightness(1.06)}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:6px 10px;font:inherit;font-size:14px;cursor:pointer;white-space:nowrap}
+.ghost:hover{color:var(--late);border-color:var(--late)}
+
+.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+@media (max-width:820px){.board{grid-template-columns:1fr}}
+.col{display:grid;gap:10px;align-content:start}
+.colh{display:flex;justify-content:space-between;font-weight:600;padding:2px 4px 8px;border-bottom:2px solid var(--line)}
+.count{color:var(--muted);font-weight:500}
+.empty{color:var(--muted);font-size:14px;margin:0;padding:18px;border:1px dashed var(--line);border-radius:var(--radius);text-align:center}
+.list{display:grid;gap:10px}
+.big{margin-top:24px}
+
+.task{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--pend);
+  border-radius:var(--radius);padding:12px 14px;display:grid;gap:8px}
+.task.andamento{border-left-color:var(--doing)}
+.task.concluido{border-left-color:var(--done)}
+.task.concluido .tt{text-decoration:line-through;color:var(--muted)}
+.tt{font-weight:600;overflow-wrap:anywhere}
+.tn{margin:0;color:var(--muted);font-size:14px;white-space:pre-line;overflow-wrap:anywhere}
+.meta{display:flex;flex-wrap:wrap;gap:6px;font-size:13px;color:var(--muted);align-items:center}
+.pill{padding:2px 9px;border-radius:99px;border:1px solid var(--line)}
+.pill.cat{color:#fff;border-color:transparent;font-weight:500}
+.pill.p-alta{border-color:var(--late);color:var(--late)}
+.late{color:var(--late);font-weight:600}
+.actions{display:flex;gap:8px;align-items:center}
+.actions select{width:auto;flex:1;padding:6px 8px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Tarefas do Negócio — Alexya Kids</h1>
+      <p class="sub" id="summary" aria-live="polite"></p>
+    </div>
+    <div class="prog" aria-label="Progresso geral">
+      <div class="bar"><span id="bar"></span></div>
+      <strong id="pct">0%</strong>
+    </div>
+  </header>
+
+  <form class="card add" id="form" autocomplete="off">
+    <input id="title" placeholder="O que precisa ser feito?" required maxlength="140" aria-label="Título da tarefa">
+    <div class="row">
+      <select id="cat" aria-label="Categoria">
+        <option value="Fotos/Conteúdo">Fotos/Conteúdo</option>
+        <option value="Pedidos">Pedidos</option>
+        <option value="Estoque">Estoque</option>
+        <option value="Financeiro">Financeiro</option>
+        <option value="Marketing">Marketing</option>
+      </select>
+      <select id="prio" aria-label="Prioridade">
+        <option value="baixa">Prioridade baixa</option>
+        <option value="media" selected>Prioridade média</option>
+        <option value="alta">Prioridade alta</option>
+      </select>
+      <input type="date" id="due" aria-label="Data limite">
+      <button class="primary" type="submit">Adicionar tarefa</button>
+    </div>
+    <textarea id="notes" rows="2" placeholder="Notas (opcional)" aria-label="Notas"></textarea>
+  </form>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Visualização">
+      <button type="button" data-view="quadro" aria-pressed="true">Quadro</button>
+      <button type="button" data-view="lista" aria-pressed="false">Lista</button>
+    </div>
+    <div class="seg" role="group" aria-label="Filtrar por categoria">
+      <button type="button" data-filtro="Todas" aria-pressed="true">Todas</button>
+      <button type="button" data-filtro="Fotos/Conteúdo" aria-pressed="false">Fotos/Conteúdo</button>
+      <button type="button" data-filtro="Pedidos" aria-pressed="false">Pedidos</button>
+      <button type="button" data-filtro="Estoque" aria-pressed="false">Estoque</button>
+      <button type="button" data-filtro="Financeiro" aria-pressed="false">Financeiro</button>
+      <button type="button" data-filtro="Marketing" aria-pressed="false">Marketing</button>
+    </div>
+  </div>
+
+  <section class="board" id="board"></section>
+  <section class="list" id="list" hidden></section>
+</div>
+
+<script>
+const KEY = 'minhas-tarefas-v1';
+const STATUS = [
+  { k: 'pendente', l: 'A fazer' },
+  { k: 'andamento', l: 'Em andamento' },
+  { k: 'concluido', l: 'Concluído' }
+];
+const PRIO = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
+const PRIO_RANK = { alta: 0, media: 1, baixa: 2 };
+const CAT = { 'Fotos/Conteúdo': '#3E7D5B', 'Pedidos': '#B0622E', 'Estoque': '#55595C', 'Financeiro': '#5E4A8C', 'Marketing': '#A24A74' };
+
+let tasks = load();
+let view = 'quadro';
+let filtro = 'Todas';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; }
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(tasks)); } catch { /* sem armazenamento: segue só nesta sessão */ }
+}
+function hoje() {
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+function fmtData(s) {
+  const [, m, d] = s.split('-');
+  return `${d}/${m}`;
+}
+function ordenar(arr) {
+  return [...arr].sort((a, b) =>
+    (a.due || '9999-99-99').localeCompare(b.due || '9999-99-99') ||
+    PRIO_RANK[a.prio] - PRIO_RANK[b.prio]);
+}
+
+function card(t) {
+  const atrasada = t.status !== 'concluido' && t.due && t.due < hoje();
+  return `
+  <article class="task ${t.status}" data-id="${esc(t.id)}">
+    <div class="tt">${esc(t.title)}</div>
+    ${t.notes ? `<p class="tn">${esc(t.notes)}</p>` : ''}
+    <div class="meta">
+      <span class="pill cat" style="background:${CAT[t.cat] || '#67766D'}">${esc(t.cat)}</span>
+      <span class="pill ${t.prio === 'alta' ? 'p-alta' : ''}">${PRIO[t.prio]}</span>
+      ${t.due ? `<span class="${atrasada ? 'late' : ''}">${fmtData(t.due)}${atrasada ? ' · atrasada' : ''}</span>` : ''}
+    </div>
+    <div class="actions">
+      <select data-act="status" aria-label="Status da tarefa">
+        ${STATUS.map(s => `<option value="${s.k}" ${s.k === t.status ? 'selected' : ''}>${s.l}</option>`).join('')}
+      </select>
+      <button class="ghost" type="button" data-del>Excluir</button>
+    </div>
+  </article>`;
+}
+
+function render() {
+  const vis = tasks.filter(t => filtro === 'Todas' || t.cat === filtro);
+  const feitas = vis.filter(t => t.status === 'concluido').length;
+  const pct = vis.length ? Math.round(feitas / vis.length * 100) : 0;
+
+  $('#bar').style.width = pct + '%';
+  $('#pct').textContent = pct + '%';
+  $('#summary').textContent = vis.length
+    ? `${feitas} de ${vis.length} concluídas`
+    : 'Nenhuma tarefa ainda. Adicione a primeira acima.';
+
+  document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === view));
+  document.querySelectorAll('[data-filtro]').forEach(b => b.setAttribute('aria-pressed', b.dataset.filtro === filtro));
+
+  $('#board').hidden = view !== 'quadro';
+  $('#list').hidden = view !== 'lista';
+
+  if (view === 'quadro') {
+    $('#board').innerHTML = STATUS.map(s => {
+      const itens = ordenar(vis.filter(t => t.status === s.k));
+      return `
+        <div class="col">
+          <div class="colh"><span>${s.l}</span><span class="count">${itens.length}</span></div>
+          ${itens.length ? itens.map(card).join('') : '<p class="empty">Nada aqui por enquanto.</p>'}
+        </div>`;
+    }).join('');
+  } else {
+    const itens = ordenar(vis);
+    $('#list').innerHTML = itens.length
+      ? itens.map(card).join('')
+      : '<p class="empty big">Nenhuma tarefa nesta categoria.</p>';
+  }
+}
+
+$('#form').addEventListener('submit', e => {
+  e.preventDefault();
+  const title = $('#title').value.trim();
+  if (!title) return;
+  tasks.push({
+    id: String(Date.now()) + Math.random().toString(36).slice(2, 7),
+    title,
+    notes: $('#notes').value.trim(),
+    cat: $('#cat').value,
+    prio: $('#prio').value,
+    due: $('#due').value,
+    status: 'pendente'
+  });
+  save();
+  e.target.reset();
+  $('#title').focus();
+  render();
+});
+
+document.addEventListener('click', e => {
+  const v = e.target.closest('[data-view]');
+  if (v) { view = v.dataset.view; render(); return; }
+
+  const f = e.target.closest('[data-filtro]');
+  if (f) { filtro = f.dataset.filtro; render(); return; }
+
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    const id = del.closest('[data-id]').dataset.id;
+    tasks = tasks.filter(t => t.id !== id);
+    save();
+    render();
+  }
+});
+
+document.addEventListener('change', e => {
+  if (!e.target.matches('[data-act="status"]')) return;
+  const id = e.target.closest('[data-id]').dataset.id;
+  const t = tasks.find(x => x.id === id);
+  if (t) { t.status = e.target.value; save(); render(); }
+});
+
+render();
+</script>
+</body>
+</html>
