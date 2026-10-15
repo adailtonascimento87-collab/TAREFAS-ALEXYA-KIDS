@@ -1,309 +1,455 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Tarefas do Negócio — Alexya Kids</title>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#EEF1EC; --surface:#FFFFFF; --ink:#1C2B24; --muted:#67766D; --line:#D3DAD2;
-  --accent:#E8703A; --accent-ink:#FFFFFF;
-  --pend:#9AA89F; --doing:#3B6FB6; --done:#2F7D5B; --late:#C23B3B;
-  --radius:12px;
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#121A16; --surface:#1B2620; --ink:#E6EDE8; --muted:#8FA096; --line:#2C3A32;
-    --accent:#F08A56; --accent-ink:#121A16;
-    --pend:#6E7D74; --doing:#7BA7E6; --done:#5CC59A; --late:#F07A7A;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#121A16; --surface:#1B2620; --ink:#E6EDE8; --muted:#8FA096; --line:#2C3A32;
-  --accent:#F08A56; --accent-ink:#121A16;
-  --pend:#6E7D74; --doing:#7BA7E6; --done:#5CC59A; --late:#F07A7A;
-}
-*,*::before,*::after{box-sizing:inherit}
-[hidden]{display:none!important}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);
-  font:400 16px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
-  outline:3px solid var(--accent);outline-offset:2px}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarefas Alexya Kids</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+            --primary-color: #ff6b35;
+            --primary-hover: #e85a24;
+            --shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
 
-.wrap{max-width:1100px;margin:0 auto;padding:28px 16px 56px}
-header.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:22px}
-h1{margin:0;font-size:clamp(28px,5vw,40px);font-weight:700;letter-spacing:-.02em;line-height:1.1}
-.sub{margin:6px 0 0;color:var(--muted)}
-.prog{display:flex;align-items:center;gap:10px;min-width:220px;flex:0 1 280px}
-.bar{flex:1;height:10px;background:var(--line);border-radius:99px;overflow:hidden}
-.bar span{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .3s ease}
-@media (prefers-reduced-motion:reduce){.bar span{transition:none}}
-#pct{font-weight:600;min-width:3.5ch;text-align:right}
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --primary-color: #ff7f50;
+            --primary-hover: #ff6347;
+            --shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
 
-.controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin-bottom:16px}
-.seg{display:inline-flex;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
-.seg button{border:0;background:transparent;color:var(--muted);padding:7px 12px;border-radius:7px;font:inherit;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            transition: background 0.3s, color 0.3s;
+        }
 
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
-.add{display:grid;gap:10px;margin-bottom:26px}
-input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
-#title{font-size:17px;font-weight:600}
-.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:center}
-.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer}
-.primary:hover{filter:brightness(1.06)}
-.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:6px 10px;font:inherit;font-size:14px;cursor:pointer;white-space:nowrap}
-.ghost:hover{color:var(--late);border-color:var(--late)}
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
 
-.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
-@media (max-width:820px){.board{grid-template-columns:1fr}}
-.col{display:grid;gap:10px;align-content:start}
-.colh{display:flex;justify-content:space-between;font-weight:600;padding:2px 4px 8px;border-bottom:2px solid var(--line)}
-.count{color:var(--muted);font-weight:500}
-.empty{color:var(--muted);font-size:14px;margin:0;padding:18px;border:1px dashed var(--line);border-radius:var(--radius);text-align:center}
-.list{display:grid;gap:10px}
-.big{margin-top:24px}
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
 
-.task{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--pend);
-  border-radius:var(--radius);padding:12px 14px;display:grid;gap:8px}
-.task.andamento{border-left-color:var(--doing)}
-.task.concluido{border-left-color:var(--done)}
-.task.concluido .tt{text-decoration:line-through;color:var(--muted)}
-.tt{font-weight:600;overflow-wrap:anywhere}
-.tn{margin:0;color:var(--muted);font-size:14px;white-space:pre-line;overflow-wrap:anywhere}
-.meta{display:flex;flex-wrap:wrap;gap:6px;font-size:13px;color:var(--muted);align-items:center}
-.pill{padding:2px 9px;border-radius:99px;border:1px solid var(--line)}
-.pill.cat{color:#fff;border-color:transparent;font-weight:500}
-.pill.p-alta{border-color:var(--late);color:var(--late)}
-.late{color:var(--late);font-weight:600}
-.actions{display:flex;gap:8px;align-items:center}
-.actions select{width:auto;flex:1;padding:6px 8px;font-size:14px}
-</style>
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .theme-btn, .settings-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .form-card, .kanban-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            box-sizing: border-box;
+            font-size: 0.9rem;
+        }
+
+        button.primary {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        button.primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 15px;
+        }
+
+        .kanban-col {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            min-height: 300px;
+        }
+
+        .kanban-col h3 {
+            font-size: 1rem;
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .task-card {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .task-card.alert-due {
+            border-left: 4px solid #ff4d4d;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 5px;
+            background: var(--border-color);
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        .btn-small {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 3px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .btn-small:hover {
+            color: var(--text-color);
+            border-color: var(--text-color);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid var(--border-color);
+        }
+
+        .category-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+    </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <div>
-      <h1>Tarefas do Negócio — Alexya Kids</h1>
-      <p class="sub" id="summary" aria-live="polite"></p>
-    </div>
-    <div class="prog" aria-label="Progresso geral">
-      <div class="bar"><span id="bar"></span></div>
-      <strong id="pct">0%</strong>
-    </div>
-  </header>
 
-  <form class="card add" id="form" autocomplete="off">
-    <input id="title" placeholder="O que precisa ser feito?" required maxlength="140" aria-label="Título da tarefa">
-    <div class="row">
-      <select id="cat" aria-label="Categoria">
-        <option value="Fotos/Conteúdo">Fotos/Conteúdo</option>
-        <option value="Pedidos">Pedidos</option>
-        <option value="Estoque">Estoque</option>
-        <option value="Financeiro">Financeiro</option>
-        <option value="Marketing">Marketing</option>
-      </select>
-      <select id="prio" aria-label="Prioridade">
-        <option value="baixa">Prioridade baixa</option>
-        <option value="media" selected>Prioridade média</option>
-        <option value="alta">Prioridade alta</option>
-      </select>
-      <input type="date" id="due" aria-label="Data limite">
-      <button class="primary" type="submit">Adicionar tarefa</button>
-    </div>
-    <textarea id="notes" rows="2" placeholder="Notas (opcional)" aria-label="Notas"></textarea>
-  </form>
+<div class="container">
+    <header>
+        <h1>Tarefas Alexya Kids</h1>
+        <div style="display: flex; gap: 8px;">
+            <button class="settings-btn" onclick="openCatModal()">Gerir Categorias</button>
+            <button class="theme-btn" onclick="toggleTheme()">🌓 Tema</button>
+        </div>
+    </header>
 
-  <div class="controls">
-    <div class="seg" role="group" aria-label="Visualização">
-      <button type="button" data-view="quadro" aria-pressed="true">Quadro</button>
-      <button type="button" data-view="lista" aria-pressed="false">Lista</button>
+    <!-- Formulário de Nova Tarefa -->
+    <div class="form-card">
+        <div class="form-row">
+            <input type="text" id="taskTitle" placeholder="O que precisa ser feito?">
+            <select id="taskCategory"></select>
+            <select id="taskPriority">
+                <option value="Baixa">Prioridade baixa</option>
+                <option value="Média" selected>Prioridade média</option>
+                <option value="Alta">Prioridade alta</option>
+            </select>
+        </div>
+        <div class="form-row" style="margin-top: 10px;">
+            <div>
+                <label style="font-size: 0.75rem; color: var(--text-muted);">Início:</label>
+                <input type="date" id="taskStartDate">
+            </div>
+            <div>
+                <label style="font-size: 0.75rem; color: var(--text-muted);">Fim (Prazo Limite):</label>
+                <input type="date" id="taskEndDate">
+            </div>
+        </div>
+        <textarea id="taskNotes" placeholder="Notas (opcional)" style="margin-top: 10px; height: 60px;"></textarea>
+        <button class="primary" onclick="addTask()" style="margin-top: 10px;">Adicionar tarefa</button>
     </div>
-    <div class="seg" role="group" aria-label="Filtrar por categoria">
-      <button type="button" data-filtro="Todas" aria-pressed="true">Todas</button>
-      <button type="button" data-filtro="Fotos/Conteúdo" aria-pressed="false">Fotos/Conteúdo</button>
-      <button type="button" data-filtro="Pedidos" aria-pressed="false">Pedidos</button>
-      <button type="button" data-filtro="Estoque" aria-pressed="false">Estoque</button>
-      <button type="button" data-filtro="Financeiro" aria-pressed="false">Financeiro</button>
-      <button type="button" data-filtro="Marketing" aria-pressed="false">Marketing</button>
-    </div>
-  </div>
 
-  <section class="board" id="board"></section>
-  <section class="list" id="list" hidden></section>
+    <!-- Quadro Kanban -->
+    <div class="kanban-board">
+        <div class="kanban-col" id="col-fazer">
+            <h3>A fazer <span id="count-fazer" class="badge">0</span></h3>
+            <div class="tasks-container" data-status="A fazer"></div>
+        </div>
+        <div class="kanban-col" id="col-andamento">
+            <h3>Em andamento <span id="count-andamento" class="badge">0</span></h3>
+            <div class="tasks-container" data-status="Em andamento"></div>
+        </div>
+        <div class="kanban-col" id="col-concluido">
+            <h3>Concluído <span id="count-concluido" class="badge">0</span></h3>
+            <div class="tasks-container" data-status="Concluído"></div>
+        </div>
+    </div>
 </div>
 
-<!-- SDK do Firebase via Script -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
+<!-- Modal de Gestão de Categorias -->
+<div class="modal" id="catModal">
+    <div class="modal-content">
+        <h3>Gerir Categorias</h3>
+        <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+            <input type="text" id="newCatName" placeholder="Nova categoria...">
+            <button class="primary" onclick="addCategory()" style="width: auto; padding: 0 15px;">Adicionar</button>
+        </div>
+        <div id="categoryListContainer"></div>
+        <button class="btn-small" onclick="closeCatModal()" style="width: 100%; margin-top: 15px; padding: 8px;">Fechar</button>
+    </div>
+</div>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCgw6zR7ZbsuNaf6rOtAGzjBM30NutuMg0",
-    authDomain: "tarefas-alexya-kids.firebaseapp.com",
-    projectId: "tarefas-alexya-kids",
-    storageBucket: "tarefas-alexya-kids.firebasestorage.app",
-    messagingSenderId: "478582481430",
-    appId: "1:478582481430:web:7a9746ec8a9a69f13a4b37"
-  };
+<script>
+    let categories = JSON.parse(localStorage.getItem('alexya_categories')) || ["Fotos/Conteúdo", "Pedidos", "Estoque", "Financeiro", "Marketing"];
+    let tasks = JSON.parse(localStorage.getItem('alexya_tasks')) || [];
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  const STATUS = [
-    { k: 'pendente', l: 'A fazer' },
-    { k: 'andamento', l: 'Em andamento' },
-    { k: 'concluido', l: 'Concluído' }
-  ];
-  const PRIO = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
-  const PRIO_RANK = { alta: 0, media: 1, baixa: 2 };
-  const CAT = { 'Fotos/Conteúdo': '#3E7D5B', 'Pedidos': '#B0622E', 'Estoque': '#55595C', 'Financeiro': '#5E4A8C', 'Marketing': '#A24A74' };
-
-  let tasks = [];
-  let view = 'quadro';
-  let filtro = 'Todas';
-
-  const $ = s => document.querySelector(s);
-  const esc = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-  function hoje() {
-    const d = new Date();
-    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  }
-  function fmtData(s) {
-    if (!s) return '';
-    const parts = s.split('-');
-    if (parts.length < 3) return s;
-    return `${parts[2]}/${parts[1]}`;
-  }
-  function ordenar(arr) {
-    return [...arr].sort((a, b) =>
-      (a.due || '9999-99-99').localeCompare(b.due || '9999-99-99') ||
-      PRIO_RANK[a.prio] - PRIO_RANK[b.prio]);
-  }
-
-  function card(t) {
-    const atrasada = t.status !== 'concluido' && t.due && t.due < hoje();
-    return `
-    <article class="task ${t.status}" data-id="${esc(t.id)}">
-      <div class="tt">${esc(t.title)}</div>
-      ${t.notes ? `<p class="tn">${esc(t.notes)}</p>` : ''}
-      <div class="meta">
-        <span class="pill cat" style="background:${CAT[t.cat] || '#67766D'}">${esc(t.cat)}</span>
-        <span class="pill ${t.prio === 'alta' ? 'p-alta' : ''}">${PRIO[t.prio]}</span>
-        ${t.due ? `<span class="${atrasada ? 'late' : ''}">${fmtData(t.due)}${atrasada ? ' · atrasada' : ''}</span>` : ''}
-      </div>
-      <div class="actions">
-        <select data-act="status" aria-label="Status da tarefa">
-          ${STATUS.map(s => `<option value="${s.k}" ${s.k === t.status ? 'selected' : ''}>${s.l}</option>`).join('')}
-        </select>
-        <button class="ghost" type="button" data-del>Excluir</button>
-      </div>
-    </article>`;
-  }
-
-  function render() {
-    const vis = tasks.filter(t => filtro === 'Todas' || t.cat === filtro);
-    const feitas = vis.filter(t => t.status === 'concluido').length;
-    const pct = vis.length ? Math.round(feitas / vis.length * 100) : 0;
-
-    $('#bar').style.width = pct + '%';
-    $('#pct').textContent = pct + '%';
-    $('#summary').textContent = vis.length
-      ? `${feitas} de ${vis.length} concluídas`
-      : 'Nenhuma tarefa ainda. Adicione a primeira acima.';
-
-    document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === view));
-    document.querySelectorAll('[data-filtro]').forEach(b => b.setAttribute('aria-pressed', b.dataset.filtro === filtro));
-
-    $('#board').hidden = view !== 'quadro';
-    $('#list').hidden = view !== 'lista';
-
-    if (view === 'quadro') {
-      $('#board').innerHTML = STATUS.map(s => {
-        const itens = ordenar(vis.filter(t => t.status === s.k));
-        return `
-          <div class="col">
-            <div class="colh"><span>${s.l}</span><span class="count">${itens.length}</span></div>
-            ${itens.length ? itens.map(card).join('') : '<p class="empty">Nada aqui por enquanto.</p>'}
-          </div>`;
-      }).join('');
-    } else {
-      const itens = ordenar(vis);
-      $('#list').innerHTML = itens.length
-        ? itens.map(card).join('')
-        : '<p class="empty big">Nenhuma tarefa nesta categoria.</p>';
+    function saveToStorage() {
+        localStorage.setItem('alexya_categories', JSON.stringify(categories));
+        localStorage.setItem('alexya_tasks', JSON.stringify(tasks));
     }
-  }
 
-  $('#form').addEventListener('submit', async e => {
-    e.preventDefault();
-    const title = $('#title').value.trim();
-    if (!title) return;
-    
-    try {
-      await addDoc(collection(db, "tarefas"), {
-        title,
-        notes: $('#notes').value.trim(),
-        cat: $('#cat').value,
-        prio: $('#prio').value,
-        due: $('#due').value,
-        status: 'pendente',
-        createdAt: Date.now()
-      });
-      e.target.reset();
-      $('#title').focus();
-    } catch (err) {
-      console.error("Erro ao adicionar tarefa: ", err);
-      alert("Erro ao salvar a tarefa. Verifique sua conexão.");
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('alexya_theme', newTheme);
     }
-  });
 
-  document.addEventListener('click', async e => {
-    const v = e.target.closest('[data-view]');
-    if (v) { view = v.dataset.view; render(); return; }
+    // Carregar tema salvo
+    const savedTheme = localStorage.getItem('alexya_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
 
-    const f = e.target.closest('[data-filtro]');
-    if (f) { filtro = f.dataset.filtro; render(); return; }
-
-    const del = e.target.closest('[data-del]');
-    if (del) {
-      const id = del.closest('[data-id]').dataset.id;
-      try {
-        await deleteDoc(doc(db, "tarefas", id));
-      } catch (err) {
-        console.error("Erro ao excluir tarefa: ", err);
-      }
+    function updateCategoryDropdowns() {
+        const select = document.getElementById('taskCategory');
+        select.innerHTML = '';
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            select.appendChild(opt);
+        });
     }
-  });
 
-  document.addEventListener('change', async e => {
-    if (!e.target.matches('[data-act="status"]')) return;
-    const id = e.target.closest('[data-id]').dataset.id;
-    const novoStatus = e.target.value;
-    try {
-      await updateDoc(doc(db, "tarefas", id), { status: novoStatus });
-    } catch (err) {
-      console.error("Erro ao atualizar status: ", err);
+    function renderTasks() {
+        const containerFazer = document.querySelector('#col-fazer .tasks-container');
+        const containerAndamento = document.querySelector('#col-andamento .tasks-container');
+        const containerConcluido = document.querySelector('#col-concluido .tasks-container');
+
+        containerFazer.innerHTML = '';
+        containerAndamento.innerHTML = '';
+        containerConcluido.innerHTML = '';
+
+        let counts = { "A fazer": 0, "Em andamento": 0, "Concluído": 0 };
+        const today = new Date().toISOString().split('T')[0];
+
+        tasks.forEach((task, index) => {
+            counts[task.status]++;
+            
+            // Verificar proximidade da data limite (2 dias ou menos)
+            let isCloseToDeadline = false;
+            if(task.endDate && task.status !== 'Concluído') {
+                const diffTime = new Date(task.endDate) - new Date(today);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if(diffDays <= 2) isCloseToDeadline = true;
+            }
+
+            const card = document.createElement('div');
+            card.className = `task-card ${isCloseToDeadline ? 'alert-due' : ''}`;
+            card.innerHTML = `
+                <strong>${task.title}</strong>
+                ${task.notes ? `<p style="font-size:0.8rem; color:var(--text-muted); margin: 5px 0;">${task.notes}</p>` : ''}
+                <div style="margin-top: 8px;">
+                    <span class="badge">${task.category}</span>
+                    <span class="badge">${task.priority}</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted);">📅 ${task.startDate || '--'} até ${task.endDate || '--'}</span>
+                </div>
+                <div class="actions-bar">
+                    <select onchange="changeStatus(${index}, this.value)" style="font-size:0.75rem; padding:3px; width:auto;">
+                        <option value="A fazer" ${task.status === 'A fazer' ? 'selected' : ''}>A fazer</option>
+                        <option value="Em andamento" ${task.status === 'Em andamento' ? 'selected' : ''}>Em andamento</option>
+                        <option value="Concluído" ${task.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
+                    </select>
+                    <button class="btn-small" onclick="deleteTask(${index})">Excluir</button>
+                </div>
+            `;
+
+            if(task.status === 'A fazer') containerFazer.appendChild(card);
+            else if(task.status === 'Em andamento') containerAndamento.appendChild(card);
+            else containerConcluido.appendChild(card);
+        });
+
+        document.getElementById('count-fazer').textContent = counts["A fazer"];
+        document.getElementById('count-andamento').textContent = counts["Em andamento"];
+        document.getElementById('count-concluido').textContent = counts["Concluído"];
     }
-  });
 
-  // Escuta as alterações no Firestore em tempo real
-  onSnapshot(collection(db, "tarefas"), (snapshot) => {
-    tasks = [];
-    snapshot.forEach((docSnap) => {
-      tasks.push({ id: docSnap.id, ...docSnap.data() });
-    });
-    render();
-  }, (error) => {
-    console.error("Erro ao escutar o banco de dados: ", error);
-  });
+    function addTask() {
+        const title = document.getElementById('taskTitle').value.trim();
+        if(!title) return alert('Por favor, digite o título da tarefa.');
+
+        const newTask = {
+            title: title,
+            category: document.getElementById('taskCategory').value,
+            priority: document.getElementById('taskPriority').value,
+            startDate: document.getElementById('taskStartDate').value,
+            endDate: document.getElementById('taskEndDate').value,
+            notes: document.getElementById('taskNotes').value.trim(),
+            status: 'A fazer'
+        };
+
+        tasks.push(newTask);
+        saveToStorage();
+        renderTasks();
+
+        document.getElementById('taskTitle').value = '';
+        document.getElementById('taskNotes').value = '';
+        document.getElementById('taskStartDate').value = '';
+        document.getElementById('taskEndDate').value = '';
+    }
+
+    function changeStatus(index, newStatus) {
+        tasks[index].status = newStatus;
+        saveToStorage();
+        renderTasks();
+    }
+
+    function deleteTask(index) {
+        if(confirm('Deseja excluir esta tarefa?')) {
+            tasks.splice(index, 1);
+            saveToStorage();
+            renderTasks();
+        }
+    }
+
+    // Modal de Categorias
+    function openCatModal() {
+        renderCategoryList();
+        document.getElementById('catModal').style.display = 'flex';
+    }
+
+    function closeCatModal() {
+        document.getElementById('catModal').style.display = 'none';
+        updateCategoryDropdowns();
+    }
+
+    function renderCategoryList() {
+        const container = document.getElementById('categoryListContainer');
+        container.innerHTML = '';
+        categories.forEach((cat, index) => {
+            const row = document.createElement('div');
+            row.className = 'category-list-item';
+            row.innerHTML = `
+                <input type="text" value="${cat}" id="cat-input-${index}" style="margin-right: 5px;">
+                <button class="btn-small" onclick="renameCategory(${index})">Salvar</button>
+                <button class="btn-small" onclick="deleteCategory(${index})" style="color: #ff4d4d; border-color: #ff4d4d;">X</button>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    function addCategory() {
+        const name = document.getElementById('newCatName').value.trim();
+        if(name && !categories.includes(name)) {
+            categories.push(name);
+            document.getElementById('newCatName').value = '';
+            saveToStorage();
+            renderCategoryList();
+        }
+    }
+
+    function renameCategory(index) {
+        const newName = document.getElementById(`cat-input-${index}`).value.trim();
+        if(newName) {
+            const oldName = categories[index];
+            categories[index] = newName;
+            // Atualizar nas tarefas existentes
+            tasks.forEach(t => { if(t.category === oldName) t.category = newName; });
+            saveToStorage();
+            renderCategoryList();
+            renderTasks();
+        }
+    }
+
+    function deleteCategory(index) {
+        if(categories.length <= 1) return alert('Você precisa manter pelo menos uma categoria.');
+        categories.splice(index, 1);
+        saveToStorage();
+        renderCategoryList();
+    }
+
+    // Inicialização
+    updateCategoryDropdowns();
+    renderTasks();
 </script>
+
 </body>
 </html>
