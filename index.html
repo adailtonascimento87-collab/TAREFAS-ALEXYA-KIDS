@@ -139,141 +139,171 @@ input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:
   <section class="list" id="list" hidden></section>
 </div>
 
-<script>
-const KEY = 'minhas-tarefas-v1';
-const STATUS = [
-  { k: 'pendente', l: 'A fazer' },
-  { k: 'andamento', l: 'Em andamento' },
-  { k: 'concluido', l: 'Concluído' }
-];
-const PRIO = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
-const PRIO_RANK = { alta: 0, media: 1, baixa: 2 };
-const CAT = { 'Fotos/Conteúdo': '#3E7D5B', 'Pedidos': '#B0622E', 'Estoque': '#55595C', 'Financeiro': '#5E4A8C', 'Marketing': '#A24A74' };
+<!-- SDK do Firebase via Script -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 
-let tasks = load();
-let view = 'quadro';
-let filtro = 'Todas';
+  const firebaseConfig = {
+    apiKey: "AIzaSyCgw6zR7ZbsuNaf6rOtAGzjBM30NutuMg0",
+    authDomain: "tarefas-alexya-kids.firebaseapp.com",
+    projectId: "tarefas-alexya-kids",
+    storageBucket: "tarefas-alexya-kids.firebasestorage.app",
+    messagingSenderId: "478582481430",
+    appId: "1:478582481430:web:7a9746ec8a9a69f13a4b37"
+  };
 
-const $ = s => document.querySelector(s);
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-function load() {
-  try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; }
-}
-function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(tasks)); } catch { /* sem armazenamento: segue só nesta sessão */ }
-}
-function hoje() {
-  const d = new Date();
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-}
-function fmtData(s) {
-  const [, m, d] = s.split('-');
-  return `${d}/${m}`;
-}
-function ordenar(arr) {
-  return [...arr].sort((a, b) =>
-    (a.due || '9999-99-99').localeCompare(b.due || '9999-99-99') ||
-    PRIO_RANK[a.prio] - PRIO_RANK[b.prio]);
-}
+  const STATUS = [
+    { k: 'pendente', l: 'A fazer' },
+    { k: 'andamento', l: 'Em andamento' },
+    { k: 'concluido', l: 'Concluído' }
+  ];
+  const PRIO = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
+  const PRIO_RANK = { alta: 0, media: 1, baixa: 2 };
+  const CAT = { 'Fotos/Conteúdo': '#3E7D5B', 'Pedidos': '#B0622E', 'Estoque': '#55595C', 'Financeiro': '#5E4A8C', 'Marketing': '#A24A74' };
 
-function card(t) {
-  const atrasada = t.status !== 'concluido' && t.due && t.due < hoje();
-  return `
-  <article class="task ${t.status}" data-id="${esc(t.id)}">
-    <div class="tt">${esc(t.title)}</div>
-    ${t.notes ? `<p class="tn">${esc(t.notes)}</p>` : ''}
-    <div class="meta">
-      <span class="pill cat" style="background:${CAT[t.cat] || '#67766D'}">${esc(t.cat)}</span>
-      <span class="pill ${t.prio === 'alta' ? 'p-alta' : ''}">${PRIO[t.prio]}</span>
-      ${t.due ? `<span class="${atrasada ? 'late' : ''}">${fmtData(t.due)}${atrasada ? ' · atrasada' : ''}</span>` : ''}
-    </div>
-    <div class="actions">
-      <select data-act="status" aria-label="Status da tarefa">
-        ${STATUS.map(s => `<option value="${s.k}" ${s.k === t.status ? 'selected' : ''}>${s.l}</option>`).join('')}
-      </select>
-      <button class="ghost" type="button" data-del>Excluir</button>
-    </div>
-  </article>`;
-}
+  let tasks = [];
+  let view = 'quadro';
+  let filtro = 'Todas';
 
-function render() {
-  const vis = tasks.filter(t => filtro === 'Todas' || t.cat === filtro);
-  const feitas = vis.filter(t => t.status === 'concluido').length;
-  const pct = vis.length ? Math.round(feitas / vis.length * 100) : 0;
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  $('#bar').style.width = pct + '%';
-  $('#pct').textContent = pct + '%';
-  $('#summary').textContent = vis.length
-    ? `${feitas} de ${vis.length} concluídas`
-    : 'Nenhuma tarefa ainda. Adicione a primeira acima.';
-
-  document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === view));
-  document.querySelectorAll('[data-filtro]').forEach(b => b.setAttribute('aria-pressed', b.dataset.filtro === filtro));
-
-  $('#board').hidden = view !== 'quadro';
-  $('#list').hidden = view !== 'lista';
-
-  if (view === 'quadro') {
-    $('#board').innerHTML = STATUS.map(s => {
-      const itens = ordenar(vis.filter(t => t.status === s.k));
-      return `
-        <div class="col">
-          <div class="colh"><span>${s.l}</span><span class="count">${itens.length}</span></div>
-          ${itens.length ? itens.map(card).join('') : '<p class="empty">Nada aqui por enquanto.</p>'}
-        </div>`;
-    }).join('');
-  } else {
-    const itens = ordenar(vis);
-    $('#list').innerHTML = itens.length
-      ? itens.map(card).join('')
-      : '<p class="empty big">Nenhuma tarefa nesta categoria.</p>';
+  function hoje() {
+    const d = new Date();
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   }
-}
+  function fmtData(s) {
+    if (!s) return '';
+    const parts = s.split('-');
+    if (parts.length < 3) return s;
+    return `${parts[2]}/${parts[1]}`;
+  }
+  function ordenar(arr) {
+    return [...arr].sort((a, b) =>
+      (a.due || '9999-99-99').localeCompare(b.due || '9999-99-99') ||
+      PRIO_RANK[a.prio] - PRIO_RANK[b.prio]);
+  }
 
-$('#form').addEventListener('submit', e => {
-  e.preventDefault();
-  const title = $('#title').value.trim();
-  if (!title) return;
-  tasks.push({
-    id: String(Date.now()) + Math.random().toString(36).slice(2, 7),
-    title,
-    notes: $('#notes').value.trim(),
-    cat: $('#cat').value,
-    prio: $('#prio').value,
-    due: $('#due').value,
-    status: 'pendente'
+  function card(t) {
+    const atrasada = t.status !== 'concluido' && t.due && t.due < hoje();
+    return `
+    <article class="task ${t.status}" data-id="${esc(t.id)}">
+      <div class="tt">${esc(t.title)}</div>
+      ${t.notes ? `<p class="tn">${esc(t.notes)}</p>` : ''}
+      <div class="meta">
+        <span class="pill cat" style="background:${CAT[t.cat] || '#67766D'}">${esc(t.cat)}</span>
+        <span class="pill ${t.prio === 'alta' ? 'p-alta' : ''}">${PRIO[t.prio]}</span>
+        ${t.due ? `<span class="${atrasada ? 'late' : ''}">${fmtData(t.due)}${atrasada ? ' · atrasada' : ''}</span>` : ''}
+      </div>
+      <div class="actions">
+        <select data-act="status" aria-label="Status da tarefa">
+          ${STATUS.map(s => `<option value="${s.k}" ${s.k === t.status ? 'selected' : ''}>${s.l}</option>`).join('')}
+        </select>
+        <button class="ghost" type="button" data-del>Excluir</button>
+      </div>
+    </article>`;
+  }
+
+  function render() {
+    const vis = tasks.filter(t => filtro === 'Todas' || t.cat === filtro);
+    const feitas = vis.filter(t => t.status === 'concluido').length;
+    const pct = vis.length ? Math.round(feitas / vis.length * 100) : 0;
+
+    $('#bar').style.width = pct + '%';
+    $('#pct').textContent = pct + '%';
+    $('#summary').textContent = vis.length
+      ? `${feitas} de ${vis.length} concluídas`
+      : 'Nenhuma tarefa ainda. Adicione a primeira acima.';
+
+    document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === view));
+    document.querySelectorAll('[data-filtro]').forEach(b => b.setAttribute('aria-pressed', b.dataset.filtro === filtro));
+
+    $('#board').hidden = view !== 'quadro';
+    $('#list').hidden = view !== 'lista';
+
+    if (view === 'quadro') {
+      $('#board').innerHTML = STATUS.map(s => {
+        const itens = ordenar(vis.filter(t => t.status === s.k));
+        return `
+          <div class="col">
+            <div class="colh"><span>${s.l}</span><span class="count">${itens.length}</span></div>
+            ${itens.length ? itens.map(card).join('') : '<p class="empty">Nada aqui por enquanto.</p>'}
+          </div>`;
+      }).join('');
+    } else {
+      const itens = ordenar(vis);
+      $('#list').innerHTML = itens.length
+        ? itens.map(card).join('')
+        : '<p class="empty big">Nenhuma tarefa nesta categoria.</p>';
+    }
+  }
+
+  $('#form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const title = $('#title').value.trim();
+    if (!title) return;
+    
+    try {
+      await addDoc(collection(db, "tarefas"), {
+        title,
+        notes: $('#notes').value.trim(),
+        cat: $('#cat').value,
+        prio: $('#prio').value,
+        due: $('#due').value,
+        status: 'pendente',
+        createdAt: Date.now()
+      });
+      e.target.reset();
+      $('#title').focus();
+    } catch (err) {
+      console.error("Erro ao adicionar tarefa: ", err);
+      alert("Erro ao salvar a tarefa. Verifique sua conexão.");
+    }
   });
-  save();
-  e.target.reset();
-  $('#title').focus();
-  render();
-});
 
-document.addEventListener('click', e => {
-  const v = e.target.closest('[data-view]');
-  if (v) { view = v.dataset.view; render(); return; }
+  document.addEventListener('click', async e => {
+    const v = e.target.closest('[data-view]');
+    if (v) { view = v.dataset.view; render(); return; }
 
-  const f = e.target.closest('[data-filtro]');
-  if (f) { filtro = f.dataset.filtro; render(); return; }
+    const f = e.target.closest('[data-filtro]');
+    if (f) { filtro = f.dataset.filtro; render(); return; }
 
-  const del = e.target.closest('[data-del]');
-  if (del) {
-    const id = del.closest('[data-id]').dataset.id;
-    tasks = tasks.filter(t => t.id !== id);
-    save();
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const id = del.closest('[data-id]').dataset.id;
+      try {
+        await deleteDoc(doc(db, "tarefas", id));
+      } catch (err) {
+        console.error("Erro ao excluir tarefa: ", err);
+      }
+    }
+  });
+
+  document.addEventListener('change', async e => {
+    if (!e.target.matches('[data-act="status"]')) return;
+    const id = e.target.closest('[data-id]').dataset.id;
+    const novoStatus = e.target.value;
+    try {
+      await updateDoc(doc(db, "tarefas", id), { status: novoStatus });
+    } catch (err) {
+      console.error("Erro ao atualizar status: ", err);
+    }
+  });
+
+  // Escuta as alterações no Firestore em tempo real
+  onSnapshot(collection(db, "tarefas"), (snapshot) => {
+    tasks = [];
+    snapshot.forEach((docSnap) => {
+      tasks.push({ id: docSnap.id, ...docSnap.data() });
+    });
     render();
-  }
-});
-
-document.addEventListener('change', e => {
-  if (!e.target.matches('[data-act="status"]')) return;
-  const id = e.target.closest('[data-id]').dataset.id;
-  const t = tasks.find(x => x.id === id);
-  if (t) { t.status = e.target.value; save(); render(); }
-});
-
-render();
+  }, (error) => {
+    console.error("Erro ao escutar o banco de dados: ", error);
+  });
 </script>
 </body>
 </html>
