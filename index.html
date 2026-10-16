@@ -170,6 +170,23 @@
             font-weight: bold;
             margin-right: 5px;
             background: var(--border-color);
+            color: var(--text-color);
+        }
+
+        /* Cores específicas para as etiquetas de Prioridade */
+        .badge-prio-baixa {
+            background-color: #28a745 !important;
+            color: #ffffff !important;
+        }
+
+        .badge-prio-media {
+            background-color: #ffc107 !important;
+            color: #212529 !important;
+        }
+
+        .badge-prio-alta {
+            background-color: #dc3545 !important;
+            color: #ffffff !important;
         }
 
         .actions-bar {
@@ -396,6 +413,12 @@
                 if(diffDays <= 2) isCloseToDeadline = true;
             }
 
+            // Define a classe CSS baseada na prioridade da tarefa
+            let prioClass = '';
+            if (task.priority === 'Baixa') prioClass = 'badge-prio-baixa';
+            else if (task.priority === 'Média') prioClass = 'badge-prio-media';
+            else if (task.priority === 'Alta') prioClass = 'badge-prio-alta';
+
             const card = document.createElement('div');
             card.className = `task-card ${isCloseToDeadline ? 'alert-due' : ''}`;
             card.innerHTML = `
@@ -403,7 +426,7 @@
                 ${task.notes ? `<p style="font-size:0.8rem; color:var(--text-muted); margin: 5px 0;">${task.notes}</p>` : ''}
                 <div style="margin-top: 8px;">
                     <span class="badge">${task.category}</span>
-                    <span class="badge">${task.priority}</span>
+                    <span class="badge ${prioClass}">${task.priority}</span>
                     <span style="font-size:0.75rem; color:var(--text-muted);">📅 ${task.startDate || '--'} até ${task.endDate || '--'}</span>
                 </div>
                 <div class="actions-bar">
