@@ -48,6 +48,8 @@
             margin-bottom: 20px;
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         h1 {
@@ -63,6 +65,24 @@
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.9rem;
+        }
+
+        .filter-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-container label {
+            font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap;
         }
 
         .form-card, .kanban-card {
@@ -213,6 +233,14 @@
         </div>
     </header>
 
+    <!-- Barra de Filtro por Categoria -->
+    <div class="filter-container">
+        <label for="filterCategory">🔍 Filtrar por Categoria:</label>
+        <select id="filterCategory" onchange="renderTasks()">
+            <option value="TODAS">Todas as Categorias</option>
+        </select>
+    </div>
+
     <!-- Formulário de Nova Tarefa -->
     <div class="form-card">
         <div class="form-row">
@@ -322,17 +350,30 @@
     document.documentElement.setAttribute('data-theme', savedTheme);
 
     function updateCategoryDropdowns() {
-        const select = document.getElementById('taskCategory');
-        select.innerHTML = '';
+        // Dropdown de criação de tarefa
+        const selectTask = document.getElementById('taskCategory');
+        selectTask.innerHTML = '';
         categories.forEach(cat => {
             const opt = document.createElement('option');
             opt.value = cat;
             opt.textContent = cat;
-            select.appendChild(opt);
+            selectTask.appendChild(opt);
         });
+
+        // Dropdown de filtro
+        const selectFilter = document.getElementById('filterCategory');
+        const selectedFilterValue = selectFilter.value;
+        selectFilter.innerHTML = '<option value="TODAS">Todas as Categorias</option>';
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            selectFilter.appendChild(opt);
+        });
+        selectFilter.value = selectedFilterValue || "TODAS";
     }
 
-    function renderTasks() {
+    window.renderTasks = function() {
         const containerFazer = document.querySelector('#col-fazer .tasks-container');
         const containerAndamento = document.querySelector('#col-andamento .tasks-container');
         const containerConcluido = document.querySelector('#col-concluido .tasks-container');
@@ -343,8 +384,15 @@
 
         let counts = { "A fazer": 0, "Em andamento": 0, "Concluído": 0 };
         const today = new Date().toISOString().split('T')[0];
+        const selectedCategory = document.getElementById('filterCategory').value;
 
-        tasks.forEach((task) => {
+        // Filtrar tarefas caso uma categoria específica esteja selecionada
+        const filteredTasks = tasks.filter(task => {
+            if (selectedCategory === 'TODAS') return true;
+            return task.category === selectedCategory;
+        });
+
+        filteredTasks.forEach((task) => {
             counts[task.status] = (counts[task.status] || 0) + 1;
             
             let isCloseToDeadline = false;
