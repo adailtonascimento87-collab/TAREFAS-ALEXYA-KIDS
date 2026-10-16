@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tarefas Alexya Kids</title>
+    <title>Tarefas Alexya Kids (Sincronizado Nuvem)</title>
     <style>
         :root {
             --bg-color: #f8f9fa;
@@ -206,7 +206,7 @@
 
 <div class="container">
     <header>
-        <h1>Tarefas Alexya Kids</h1>
+        <h1>Tarefas Alexya Kids ☁️</h1>
         <div style="display: flex; gap: 8px;">
             <button class="settings-btn" onclick="openCatModal()">Gerir Categorias</button>
             <button class="theme-btn" onclick="toggleTheme()">🌓 Tema</button>
@@ -268,23 +268,56 @@
     </div>
 </div>
 
-<script>
-    let categories = JSON.parse(localStorage.getItem('alexya_categories')) || ["Fotos/Conteúdo", "Pedidos", "Estoque", "Financeiro", "Marketing"];
-    let tasks = JSON.parse(localStorage.getItem('alexya_tasks')) || [];
+<!-- Conexão com Firebase SDK -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    function saveToStorage() {
-        localStorage.setItem('alexya_categories', JSON.stringify(categories));
-        localStorage.setItem('alexya_tasks', JSON.stringify(tasks));
-    }
+    // Configuração com as suas chaves do Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyCgw6zR7ZbsuNaf6r0tAGzjBM30NutvMg0",
+        authDomain: "tarefas-alexya-kids.firebaseapp.com",
+        projectId: "tarefas-alexya-kids",
+        storageBucket: "tarefas-alexya-kids.firebasestorage.app",
+        messagingSenderId: "478582481430",
+        appId: "1:478582481430:web:7a9746ec8a9a69f13a4b37"
+    };
 
-    function toggleTheme() {
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let categories = ["Fotos/Conteúdo", "Pedidos", "Estoque", "Financeiro", "Marketing"];
+    let tasks = [];
+
+    // Sincronizar Categorias em Tempo Real
+    const catDocRef = doc(db, "settings", "categories");
+    onSnapshot(catDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+            categories = docSnap.data().list || categories;
+        } else {
+            setDoc(catDocRef, { list: categories });
+        }
+        updateCategoryDropdowns();
+    });
+
+    // Sincronizar Tarefas em Tempo Real
+    const tasksColRef = collection(db, "tasks");
+    onSnapshot(tasksColRef, (snapshot) => {
+        tasks = [];
+        snapshot.forEach((doc) => {
+            tasks.push({ id: doc.id, ...doc.data() });
+        });
+        renderTasks();
+    });
+
+    // Funções Globais para os botões do HTML
+    window.toggleTheme = function() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('alexya_theme', newTheme);
     }
 
-    // Carregar tema salvo
     const savedTheme = localStorage.getItem('alexya_theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
 
@@ -311,10 +344,9 @@
         let counts = { "A fazer": 0, "Em andamento": 0, "Concluído": 0 };
         const today = new Date().toISOString().split('T')[0];
 
-        tasks.forEach((task, index) => {
-            counts[task.status]++;
+        tasks.forEach((task) => {
+            counts[task.status] = (counts[task.status] || 0) + 1;
             
-            // Verificar proximidade da data limite (2 dias ou menos)
             let isCloseToDeadline = false;
             if(task.endDate && task.status !== 'Concluído') {
                 const diffTime = new Date(task.endDate) - new Date(today);
@@ -333,12 +365,12 @@
                     <span style="font-size:0.75rem; color:var(--text-muted);">📅 ${task.startDate || '--'} até ${task.endDate || '--'}</span>
                 </div>
                 <div class="actions-bar">
-                    <select onchange="changeStatus(${index}, this.value)" style="font-size:0.75rem; padding:3px; width:auto;">
+                    <select onchange="changeStatus('${task.id}', this.value)" style="font-size:0.75rem; padding:3px; width:auto;">
                         <option value="A fazer" ${task.status === 'A fazer' ? 'selected' : ''}>A fazer</option>
                         <option value="Em andamento" ${task.status === 'Em andamento' ? 'selected' : ''}>Em andamento</option>
                         <option value="Concluído" ${task.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
                     </select>
-                    <button class="btn-small" onclick="deleteTask(${index})">Excluir</button>
+                    <button class="btn-small" onclick="deleteTask('${task.id}')">Excluir</button>
                 </div>
             `;
 
@@ -347,12 +379,12 @@
             else containerConcluido.appendChild(card);
         });
 
-        document.getElementById('count-fazer').textContent = counts["A fazer"];
-        document.getElementById('count-andamento').textContent = counts["Em andamento"];
-        document.getElementById('count-concluido').textContent = counts["Concluído"];
+        document.getElementById('count-fazer').textContent = counts["A fazer"] || 0;
+        document.getElementById('count-andamento').textContent = counts["Em andamento"] || 0;
+        document.getElementById('count-concluido').textContent = counts["Concluído"] || 0;
     }
 
-    function addTask() {
+    window.addTask = async function() {
         const title = document.getElementById('taskTitle').value.trim();
         if(!title) return alert('Por favor, digite o título da tarefa.');
 
@@ -366,9 +398,7 @@
             status: 'A fazer'
         };
 
-        tasks.push(newTask);
-        saveToStorage();
-        renderTasks();
+        await addDoc(tasksColRef, newTask);
 
         document.getElementById('taskTitle').value = '';
         document.getElementById('taskNotes').value = '';
@@ -376,27 +406,24 @@
         document.getElementById('taskEndDate').value = '';
     }
 
-    function changeStatus(index, newStatus) {
-        tasks[index].status = newStatus;
-        saveToStorage();
-        renderTasks();
+    window.changeStatus = async function(id, newStatus) {
+        const taskDoc = doc(db, "tasks", id);
+        await updateDoc(taskDoc, { status: newStatus });
     }
 
-    function deleteTask(index) {
+    window.deleteTask = async function(id) {
         if(confirm('Deseja excluir esta tarefa?')) {
-            tasks.splice(index, 1);
-            saveToStorage();
-            renderTasks();
+            const taskDoc = doc(db, "tasks", id);
+            await deleteDoc(taskDoc);
         }
     }
 
-    // Modal de Categorias
-    function openCatModal() {
+    window.openCatModal = function() {
         renderCategoryList();
         document.getElementById('catModal').style.display = 'flex';
     }
 
-    function closeCatModal() {
+    window.closeCatModal = function() {
         document.getElementById('catModal').style.display = 'none';
         updateCategoryDropdowns();
     }
@@ -416,39 +443,31 @@
         });
     }
 
-    function addCategory() {
+    window.addCategory = async function() {
         const name = document.getElementById('newCatName').value.trim();
         if(name && !categories.includes(name)) {
             categories.push(name);
             document.getElementById('newCatName').value = '';
-            saveToStorage();
+            await setDoc(catDocRef, { list: categories });
             renderCategoryList();
         }
     }
 
-    function renameCategory(index) {
+    window.renameCategory = async function(index) {
         const newName = document.getElementById(`cat-input-${index}`).value.trim();
         if(newName) {
-            const oldName = categories[index];
             categories[index] = newName;
-            // Atualizar nas tarefas existentes
-            tasks.forEach(t => { if(t.category === oldName) t.category = newName; });
-            saveToStorage();
+            await setDoc(catDocRef, { list: categories });
             renderCategoryList();
-            renderTasks();
         }
     }
 
-    function deleteCategory(index) {
+    window.deleteCategory = async function(index) {
         if(categories.length <= 1) return alert('Você precisa manter pelo menos uma categoria.');
         categories.splice(index, 1);
-        saveToStorage();
+        await setDoc(catDocRef, { list: categories });
         renderCategoryList();
     }
-
-    // Inicialização
-    updateCategoryDropdowns();
-    renderTasks();
 </script>
 
 </body>
